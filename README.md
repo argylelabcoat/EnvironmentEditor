@@ -52,11 +52,41 @@ Each variable shows:
 
 ### Editing Variables
 
+User variables can be edited, added, or deleted. System variables are read-only in the current version.
+
 - **Double-click** a user variable to edit its name and value.
 - **Add** — click the Add button to create a new user variable.
 - **Delete** — select a user variable and click Delete to remove it.
 - **Undo / Redo** — revert or re-apply changes.
 - **Backup** — save the current state of all variables to a file.
+
+### What Edit / Add / Delete Does on Each Platform
+
+#### macOS
+
+OpenEnvEd reads the current user environment by launching your login shell and capturing its output. This shows the fully resolved values of all variables, including those built up by `path_helper`, `launchd`, and profile scripts.
+
+**Edit** — updates or adds an `export KEY="value"` line in your primary shell profile (`~/.zshrc` by default, falling back to `~/.zshenv`). If the variable originally came from the shell environment (shown as `Inherited` in the Origin column), editing it creates a new explicit definition that will override the inherited value in future sessions.
+
+**Add** — appends a new `export KEY="value"` line to `~/.zshrc`.
+
+**Delete** — removes the `export` line for that key from `~/.zshrc`. If the variable was inherited from the shell environment rather than defined in a profile, it may reappear the next time OpenEnvEd loads because the shell still provides it.
+
+#### Linux
+
+**Edit** — updates or adds an `export KEY=value` line in `~/.bashrc`.
+
+**Add** — appends a new `export KEY=value` line to `~/.bashrc`.
+
+**Delete** — removes the `export` line for that key from `~/.bashrc`.
+
+#### Windows
+
+**Edit** — updates or creates the value under the registry key `HKCU\Environment`.
+
+**Add** — creates a new string value under `HKCU\Environment`.
+
+**Delete** — removes the value from `HKCU\Environment`.
 
 ### Origin Column
 
@@ -70,14 +100,6 @@ The Origin column shows the source of each variable:
 | Linux system | `/etc/environment` |
 | Windows user | `Registry: HKCU\Environment` |
 | Windows system | `Registry: HKLM\...\Environment` |
-
-#### What does "Inherited" mean? (macOS)
-
-On macOS, many variables come from the login shell environment rather than an explicit `export` line in a profile file. These are marked **Inherited**.
-
-**Editing an Inherited variable** adds or updates an `export` line in your primary shell profile (`~/.zshrc` by default, falling back to `~/.zshenv`). This creates an explicit override that shadows the inherited value in future shell sessions.
-
-**Deleting an Inherited variable** removes its explicit entry from `~/.zshrc` if one exists, but cannot remove the underlying source (e.g. `launchd`, `path_helper`, or system defaults). The variable may reappear on the next load if the shell still provides it.
 
 ## CLI Usage
 
@@ -94,14 +116,6 @@ src/
   cli/         — CLI entry point
 tests/         — FPCUnit test units
 ```
-
-## Development Standards
-
-See [`AGENTS.md`](AGENTS.md) for contributor guidelines, including:
-- Mandatory compiler directives
-- Heaptrc leak detection in debug builds
-- JEDI Code Format (JCF) profile requirements
-- Test-driven development workflow with FPCUnit
 
 ## License
 
