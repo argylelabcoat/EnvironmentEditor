@@ -19,6 +19,8 @@ type
     constructor Create;
     function LoadUserVariables: TStringList;
     function LoadSystemVariables: TStringList;
+    function LoadUserVariableOrigins: TStringList;
+    function LoadSystemVariableOrigins: TStringList;
     function SaveUserVariables(Vars: TStringList): Boolean;
     function SaveSystemVariables(Vars: TStringList): Boolean;
     procedure BroadcastEnvironmentChange;
@@ -83,6 +85,60 @@ begin
         if Value.StartsWith('"') and Value.EndsWith('"') and (Length(Value) > 1) then
           Value := Copy(Value, 2, Length(Value) - 2);
         Result.Add(Key + '=' + Value);
+      end;
+    end;
+  finally
+    Lines.Free;
+  end;
+end;
+
+function TUnixEnvProvider.LoadUserVariableOrigins: TStringList;
+var
+  Lines: TStringList;
+  I: Integer;
+  Key, Value: string;
+  Origin: string;
+begin
+  Result := TStringList.Create;
+  Lines := TStringList.Create;
+  try
+    Origin := FUserProfilePath;
+    if FileExists(Origin) then
+      Lines.LoadFromFile(Origin);
+    for I := 0 to Lines.Count - 1 do
+    begin
+      if ParseExportLine(Lines[I], Key, Value) then
+        Result.Values[Key] := Origin;
+    end;
+  finally
+    Lines.Free;
+  end;
+end;
+
+function TUnixEnvProvider.LoadSystemVariableOrigins: TStringList;
+var
+  Lines: TStringList;
+  I: Integer;
+  Line, Key: string;
+  PosEq: Integer;
+  Origin: string;
+begin
+  Result := TStringList.Create;
+  Lines := TStringList.Create;
+  try
+    Origin := FSystemEnvironmentPath;
+    if FileExists(Origin) then
+      Lines.LoadFromFile(Origin);
+    for I := 0 to Lines.Count - 1 do
+    begin
+      Line := Trim(Lines[I]);
+      if (Line = '') or Line.StartsWith('#') then
+        Continue;
+      PosEq := Pos('=', Line);
+      if PosEq > 0 then
+      begin
+        Key := Copy(Line, 1, PosEq - 1);
+        Result.Values[Key] := Origin;
       end;
     end;
   finally

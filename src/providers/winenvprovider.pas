@@ -17,6 +17,8 @@ type
     destructor Destroy; override;
     function LoadUserVariables: TStringList;
     function LoadSystemVariables: TStringList;
+    function LoadUserVariableOrigins: TStringList;
+    function LoadSystemVariableOrigins: TStringList;
     function SaveUserVariables(Vars: TStringList): Boolean;
     function SaveSystemVariables(Vars: TStringList): Boolean;
     procedure BroadcastEnvironmentChange;
@@ -71,6 +73,64 @@ begin
   end;
 end;
 
+function TWinEnvProvider.LoadUserVariableOrigins: TStringList;
+var
+  Reg: TRegistry;
+  Names: TStringList;
+  I: Integer;
+  Origin: string;
+begin
+  Result := TStringList.Create;
+  Names := TStringList.Create;
+  try
+    Reg := TRegistry.Create;
+    try
+      Reg.RootKey := FUserRoot;
+      Origin := 'Registry: HKCU\Environment';
+      if Reg.OpenKeyReadOnly('Environment') then
+      begin
+        Reg.GetValueNames(Names);
+        Reg.CloseKey;
+      end;
+    finally
+      Reg.Free;
+    end;
+    for I := 0 to Names.Count - 1 do
+      Result.Values[Names[I]] := Origin;
+  finally
+    Names.Free;
+  end;
+end;
+
+function TWinEnvProvider.LoadSystemVariableOrigins: TStringList;
+var
+  Reg: TRegistry;
+  Names: TStringList;
+  I: Integer;
+  Origin: string;
+begin
+  Result := TStringList.Create;
+  Names := TStringList.Create;
+  try
+    Reg := TRegistry.Create;
+    try
+      Reg.RootKey := FSystemRoot;
+      Origin := 'Registry: HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+      if Reg.OpenKeyReadOnly('SYSTEM\CurrentControlSet\Control\Session Manager\Environment') then
+      begin
+        Reg.GetValueNames(Names);
+        Reg.CloseKey;
+      end;
+    finally
+      Reg.Free;
+    end;
+    for I := 0 to Names.Count - 1 do
+      Result.Values[Names[I]] := Origin;
+  finally
+    Names.Free;
+  end;
+end;
+
 function TWinEnvProvider.SaveUserVariables(Vars: TStringList): Boolean;
 begin
   Result := True;
@@ -105,6 +165,16 @@ begin
 end;
 
 function TWinEnvProvider.LoadSystemVariables: TStringList;
+begin
+  Result := TStringList.Create;
+end;
+
+function TWinEnvProvider.LoadUserVariableOrigins: TStringList;
+begin
+  Result := TStringList.Create;
+end;
+
+function TWinEnvProvider.LoadSystemVariableOrigins: TStringList;
 begin
   Result := TStringList.Create;
 end;

@@ -30,12 +30,14 @@ type
   private
     FUserVars: TStringList;
     FSystemVars: TStringList;
+    FUserOrigins: TStringList;
+    FSystemOrigins: TStringList;
     FProvider: IEnvProvider;
     FUndoManager: TUndoManager;
     FBackupManager: TBackupManager;
     procedure InitTrees;
     procedure LoadVariables;
-    procedure PopulateTree(ATree: TListView; AVars: TStringList);
+    procedure PopulateTree(ATree: TListView; AVars: TStringList; AOrigins: TStringList);
     procedure RefreshDiagnostics;
     procedure UserTreeCustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
@@ -57,6 +59,8 @@ begin
   Height := 768;
   FUserVars := TStringList.Create;
   FSystemVars := TStringList.Create;
+  FUserOrigins := TStringList.Create;
+  FSystemOrigins := TStringList.Create;
   FUndoManager := TUndoManager.Create;
   FBackupManager := TBackupManager.Create(GetAppConfigDir(False) + 'backup.env');
 
@@ -81,6 +85,8 @@ procedure TMainForm.FormDestroy(Sender: TObject);
 begin
   FUserVars.Free;
   FSystemVars.Free;
+  FUserOrigins.Free;
+  FSystemOrigins.Free;
   FUndoManager.Free;
   FBackupManager.Free;
 end;
@@ -90,8 +96,10 @@ begin
   UserTree.ViewStyle := vsReport;
   UserTree.Columns.Add.Caption := 'Name';
   UserTree.Columns.Add.Caption := 'Value';
+  UserTree.Columns.Add.Caption := 'Origin';
   UserTree.Columns[0].Width := 200;
-  UserTree.Columns[1].Width := 400;
+  UserTree.Columns[1].Width := 300;
+  UserTree.Columns[2].Width := 250;
   UserTree.Align := alLeft;
   UserTree.Width := ClientWidth div 2 - Splitter1.Width div 2;
   UserTree.OnCustomDrawItem := @UserTreeCustomDrawItem;
@@ -99,8 +107,10 @@ begin
   SystemTree.ViewStyle := vsReport;
   SystemTree.Columns.Add.Caption := 'Name';
   SystemTree.Columns.Add.Caption := 'Value';
+  SystemTree.Columns.Add.Caption := 'Origin';
   SystemTree.Columns[0].Width := 200;
-  SystemTree.Columns[1].Width := 400;
+  SystemTree.Columns[1].Width := 300;
+  SystemTree.Columns[2].Width := 250;
   SystemTree.Align := alClient;
 end;
 
@@ -108,6 +118,8 @@ procedure TMainForm.LoadVariables;
 var
   UserLoaded: TStringList;
   SystemLoaded: TStringList;
+  UserOriginsLoaded: TStringList;
+  SystemOriginsLoaded: TStringList;
 begin
   UserLoaded := FProvider.LoadUserVariables;
   try
@@ -123,22 +135,44 @@ begin
     SystemLoaded.Free;
   end;
 
-  PopulateTree(UserTree, FUserVars);
-  PopulateTree(SystemTree, FSystemVars);
+  UserOriginsLoaded := FProvider.LoadUserVariableOrigins;
+  try
+    FUserOrigins.Assign(UserOriginsLoaded);
+  finally
+    UserOriginsLoaded.Free;
+  end;
+
+  SystemOriginsLoaded := FProvider.LoadSystemVariableOrigins;
+  try
+    FSystemOrigins.Assign(SystemOriginsLoaded);
+  finally
+    SystemOriginsLoaded.Free;
+  end;
+
+  PopulateTree(UserTree, FUserVars, FUserOrigins);
+  PopulateTree(SystemTree, FSystemVars, FSystemOrigins);
   RefreshDiagnostics;
 end;
 
-procedure TMainForm.PopulateTree(ATree: TListView; AVars: TStringList);
+procedure TMainForm.PopulateTree(ATree: TListView; AVars: TStringList; AOrigins: TStringList);
 var
   I: Integer;
   Item: TListItem;
+  Key: string;
+  Origin: string;
 begin
   ATree.Items.Clear;
   for I := 0 to AVars.Count - 1 do
   begin
     Item := ATree.Items.Add;
-    Item.Caption := AVars.Names[I];
+    Key := AVars.Names[I];
+    Item.Caption := Key;
     Item.SubItems.Add(AVars.ValueFromIndex[I]);
+    if Assigned(AOrigins) then
+      Origin := AOrigins.Values[Key]
+    else
+      Origin := '';
+    Item.SubItems.Add(Origin);
   end;
 end;
 
@@ -196,7 +230,7 @@ begin
   State := FUndoManager.Undo;
   try
     FUserVars.Assign(State);
-    PopulateTree(UserTree, FUserVars);
+    PopulateTree(UserTree, FUserVars, FUserOrigins);
     RefreshDiagnostics;
   finally
     State.Free;
@@ -212,7 +246,7 @@ begin
   State := FUndoManager.Redo;
   try
     FUserVars.Assign(State);
-    PopulateTree(UserTree, FUserVars);
+    PopulateTree(UserTree, FUserVars, FUserOrigins);
     RefreshDiagnostics;
   finally
     State.Free;

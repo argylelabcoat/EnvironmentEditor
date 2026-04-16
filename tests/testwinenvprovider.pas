@@ -15,6 +15,8 @@ type
   published
     procedure TestCreate;
     procedure TestInterfaceImplemented;
+    procedure TestLoadUserVariableOrigins;
+    procedure TestLoadSystemVariableOrigins;
   end;
 
 implementation
@@ -37,6 +39,46 @@ var
 begin
   Provider := TWinEnvProvider.Create;
   AssertNotNull(Pointer(Provider));
+end;
+
+procedure TTestWinEnvProvider.TestLoadUserVariableOrigins;
+var
+  Provider: TWinEnvProvider;
+  Origins: TStringList;
+begin
+  Provider := TWinEnvProvider.Create;
+  try
+    Origins := Provider.LoadUserVariableOrigins;
+    try
+      {$IFNDEF MSWINDOWS}
+      AssertEquals(0, Origins.Count);
+      {$ENDIF}
+    finally
+      Origins.Free;
+    end;
+  finally
+    Provider.Free;
+  end;
+end;
+
+procedure TTestWinEnvProvider.TestLoadSystemVariableOrigins;
+var
+  Provider: TWinEnvProvider;
+  Origins: TStringList;
+begin
+  Provider := TWinEnvProvider.Create;
+  try
+    Origins := Provider.LoadSystemVariableOrigins;
+    try
+      {$IFNDEF MSWINDOWS}
+      AssertEquals(0, Origins.Count);
+      {$ENDIF}
+    finally
+      Origins.Free;
+    end;
+  finally
+    Provider.Free;
+  end;
 end;
 
 initialization

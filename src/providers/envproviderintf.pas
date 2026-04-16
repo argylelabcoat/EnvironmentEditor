@@ -15,6 +15,8 @@ type
     ['{B5E4A3F2-1C2D-4E3F-8A9B-0C1D2E3F4A5B}']
     function LoadUserVariables: TStringList;
     function LoadSystemVariables: TStringList;
+    function LoadUserVariableOrigins: TStringList;
+    function LoadSystemVariableOrigins: TStringList;
     function SaveUserVariables(Vars: TStringList): Boolean;
     function SaveSystemVariables(Vars: TStringList): Boolean;
     procedure BroadcastEnvironmentChange;

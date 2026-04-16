@@ -20,6 +20,8 @@ type
     procedure TestLoadUserVariables;
     procedure TestLoadSystemVariables;
     procedure TestSaveUserVariables;
+    procedure TestLoadUserVariableOrigins;
+    procedure TestLoadSystemVariableOrigins;
   end;
 
 implementation
@@ -172,6 +174,72 @@ begin
     end;
   finally
     Vars.Free;
+    DeleteFile(TempFile);
+  end;
+end;
+
+procedure TTestUnixEnvProvider.TestLoadUserVariableOrigins;
+var
+  Provider: TUnixEnvProvider;
+  Origins: TStringList;
+  TempFile: string;
+  Content: TStringList;
+begin
+  TempFile := GetTempFileName;
+  Content := TStringList.Create;
+  try
+    Content.Add('export PATH=/usr/local/bin');
+    Content.SaveToFile(TempFile);
+  finally
+    Content.Free;
+  end;
+
+  Provider := TUnixEnvProvider.Create;
+  try
+    Provider.UserProfilePath := TempFile;
+    Origins := Provider.LoadUserVariableOrigins;
+    try
+      AssertEquals(1, Origins.Count);
+      AssertEquals(TempFile, Origins.Values['PATH']);
+    finally
+      Origins.Free;
+    end;
+  finally
+    Provider.Free;
+    DeleteFile(TempFile);
+  end;
+end;
+
+procedure TTestUnixEnvProvider.TestLoadSystemVariableOrigins;
+var
+  Provider: TUnixEnvProvider;
+  Origins: TStringList;
+  TempFile: string;
+  Content: TStringList;
+begin
+  TempFile := GetTempFileName;
+  Content := TStringList.Create;
+  try
+    Content.Add('PATH="/usr/local/bin:/usr/bin:/bin"');
+    Content.Add('JAVA_HOME="/usr/lib/jvm/default"');
+    Content.SaveToFile(TempFile);
+  finally
+    Content.Free;
+  end;
+
+  Provider := TUnixEnvProvider.Create;
+  try
+    Provider.SystemEnvironmentPath := TempFile;
+    Origins := Provider.LoadSystemVariableOrigins;
+    try
+      AssertEquals(2, Origins.Count);
+      AssertEquals(TempFile, Origins.Values['PATH']);
+      AssertEquals(TempFile, Origins.Values['JAVA_HOME']);
+    finally
+      Origins.Free;
+    end;
+  finally
+    Provider.Free;
     DeleteFile(TempFile);
   end;
 end;
