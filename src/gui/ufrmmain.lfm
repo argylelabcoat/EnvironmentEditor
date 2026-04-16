@@ -43,6 +43,22 @@ object MainForm: TMainForm
       Caption = 'Backup'
       TabOrder = 2
     end
+    object BtnAdd: TButton
+      Left = 256
+      Height = 25
+      Top = 8
+      Width = 75
+      Caption = 'Add'
+      TabOrder = 3
+    end
+    object BtnDelete: TButton
+      Left = 336
+      Height = 25
+      Top = 8
+      Width = 75
+      Caption = 'Delete'
+      TabOrder = 4
+    end
   end
   object Splitter1: TSplitter
     Left = 513

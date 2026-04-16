@@ -67,6 +67,7 @@ begin
 
   Provider := TMacEnvProvider.Create;
   try
+    Provider.UseShellEvaluation := False;
     Provider.SearchPaths.Clear;
     Provider.SearchPaths.Add(TempFile);
     Vars := Provider.LoadUserVariables;
@@ -92,8 +93,8 @@ var
   TempFileA, TempFileB: string;
   Content: TStringList;
 begin
-  TempFileA := GetTempFileName;
-  TempFileB := GetTempFileName;
+  TempFileA := GetTempDir(False) + 'testmac_multi_a_' + IntToStr(Random(MaxInt)) + '.tmp';
+  TempFileB := GetTempDir(False) + 'testmac_multi_b_' + IntToStr(Random(MaxInt)) + '.tmp';
   Content := TStringList.Create;
   try
     Content.Add('export VAR_A=alpha');
@@ -109,15 +110,16 @@ begin
 
   Provider := TMacEnvProvider.Create;
   try
+    Provider.UseShellEvaluation := False;
     Provider.SearchPaths.Clear;
     Provider.SearchPaths.Add(TempFileA);
     Provider.SearchPaths.Add(TempFileB);
     Vars := Provider.LoadUserVariables;
     try
-      AssertEquals(3, Vars.Count);
       AssertEquals('alpha', Vars.Values['VAR_A']);
       AssertEquals('beta', Vars.Values['VAR_B']);
       AssertEquals('second', Vars.Values['SHARED']);
+      AssertEquals(3, Vars.Count);
     finally
       Vars.Free;
     end;
@@ -149,6 +151,7 @@ begin
   Provider := TMacEnvProvider.Create;
   try
     Provider.SystemPathsFile := TempFile;
+    Provider.SystemPathsDir := GetTempDir(False) + 'nonexistent_' + IntToStr(Random(MaxInt)) + '/';
     Vars := Provider.LoadSystemVariables;
     try
       AssertEquals(1, Vars.Count);
@@ -196,7 +199,7 @@ begin
     try
       AssertEquals(1, Vars.Count);
       AssertEquals('PATH', Vars.Names[0]);
-      AssertEquals('/usr/local/bin:/opt/homebrew/bin:/usr/local/go/bin',
+      AssertEquals('/usr/local/bin:/usr/local/go/bin:/opt/homebrew/bin',
         Vars.ValueFromIndex[0]);
     finally
       Vars.Free;
@@ -296,6 +299,7 @@ begin
   Provider := TMacEnvProvider.Create;
   try
     Provider.SystemPathsFile := TempFile;
+    Provider.SystemPathsDir := GetTempDir(False) + 'nonexistent_' + IntToStr(Random(MaxInt)) + '/';
     Origins := Provider.LoadSystemVariableOrigins;
     try
       AssertEquals(1, Origins.Count);

@@ -12,35 +12,41 @@ uses
   StdCtrls, envproviderintf, undomanager, backupmanager, pathutils, validator,
   macenvprovider;
 
-type
-  TMainForm = class(TForm)
-    BottomPanel: TPanel;
-    BtnUndo: TButton;
-    BtnRedo: TButton;
-    BtnBackup: TButton;
-    Splitter1: TSplitter;
-    StatusBar: TStatusBar;
-    UserTree: TListView;
-    SystemTree: TListView;
-    procedure FormCreate(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
-    procedure BtnUndoClick(Sender: TObject);
-    procedure BtnRedoClick(Sender: TObject);
-    procedure BtnBackupClick(Sender: TObject);
-  private
-    FUserVars: TStringList;
-    FSystemVars: TStringList;
-    FUserOrigins: TStringList;
-    FSystemOrigins: TStringList;
-    FProvider: IEnvProvider;
-    FUndoManager: TUndoManager;
-    FBackupManager: TBackupManager;
-    procedure InitTrees;
+  type
+    TMainForm = class(TForm)
+      BottomPanel: TPanel;
+      BtnUndo: TButton;
+      BtnRedo: TButton;
+      BtnBackup: TButton;
+      BtnAdd: TButton;
+      BtnDelete: TButton;
+      Splitter1: TSplitter;
+      StatusBar: TStatusBar;
+      UserTree: TListView;
+      SystemTree: TListView;
+      procedure FormCreate(Sender: TObject);
+      procedure FormDestroy(Sender: TObject);
+      procedure BtnUndoClick(Sender: TObject);
+      procedure BtnRedoClick(Sender: TObject);
+      procedure BtnBackupClick(Sender: TObject);
+      procedure BtnAddClick(Sender: TObject);
+      procedure BtnDeleteClick(Sender: TObject);
+      procedure UserTreeDblClick(Sender: TObject);
+    private
+      FUserVars: TStringList;
+      FSystemVars: TStringList;
+      FUserOrigins: TStringList;
+      FSystemOrigins: TStringList;
+      FProvider: IEnvProvider;
+      FUndoManager: TUndoManager;
+      FBackupManager: TBackupManager;
+      procedure InitTrees;
     procedure LoadVariables;
     procedure PopulateTree(ATree: TListView; AVars: TStringList; AOrigins: TStringList);
     procedure RefreshDiagnostics;
     procedure UserTreeCustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
+    procedure EditVariable(const CurrentName, CurrentValue: string; out NewName, NewValue: string; out Accepted: Boolean);
   public
   end;
 
@@ -77,6 +83,9 @@ begin
   BtnUndo.OnClick := @BtnUndoClick;
   BtnRedo.OnClick := @BtnRedoClick;
   BtnBackup.OnClick := @BtnBackupClick;
+  BtnAdd.OnClick := @BtnAddClick;
+  BtnDelete.OnClick := @BtnDeleteClick;
+  UserTree.OnDblClick := @UserTreeDblClick;
 
   LoadVariables;
 end;
@@ -268,6 +277,135 @@ begin
   finally
     AllVars.Free;
   end;
+end;
+
+procedure TMainForm.EditVariable(const CurrentName, CurrentValue: string; out NewName, NewValue: string; out Accepted: Boolean);
+var
+  Dlg: TForm;
+  EdName, EdValue: TEdit;
+  LblName, LblValue: TLabel;
+  BtnOK, BtnCancel: TButton;
+begin
+  Dlg := TForm.CreateNew(nil);
+  try
+    Dlg.Caption := 'Edit Variable';
+    Dlg.Width := 400;
+    Dlg.Height := 180;
+    Dlg.Position := poScreenCenter;
+    Dlg.BorderStyle := bsDialog;
+
+    LblName := TLabel.Create(Dlg);
+    LblName.Parent := Dlg;
+    LblName.Left := 16;
+    LblName.Top := 16;
+    LblName.Caption := 'Name:';
+
+    EdName := TEdit.Create(Dlg);
+    EdName.Parent := Dlg;
+    EdName.Left := 80;
+    EdName.Top := 12;
+    EdName.Width := 280;
+    EdName.Text := CurrentName;
+
+    LblValue := TLabel.Create(Dlg);
+    LblValue.Parent := Dlg;
+    LblValue.Left := 16;
+    LblValue.Top := 56;
+    LblValue.Caption := 'Value:';
+
+    EdValue := TEdit.Create(Dlg);
+    EdValue.Parent := Dlg;
+    EdValue.Left := 80;
+    EdValue.Top := 52;
+    EdValue.Width := 280;
+    EdValue.Text := CurrentValue;
+
+    BtnOK := TButton.Create(Dlg);
+    BtnOK.Parent := Dlg;
+    BtnOK.Caption := 'OK';
+    BtnOK.ModalResult := mrOK;
+    BtnOK.Left := 200;
+    BtnOK.Top := 100;
+    BtnOK.Default := True;
+
+    BtnCancel := TButton.Create(Dlg);
+    BtnCancel.Parent := Dlg;
+    BtnCancel.Caption := 'Cancel';
+    BtnCancel.ModalResult := mrCancel;
+    BtnCancel.Left := 290;
+    BtnCancel.Top := 100;
+
+    if Dlg.ShowModal = mrOK then
+    begin
+      NewName := Trim(EdName.Text);
+      NewValue := EdValue.Text;
+      Accepted := NewName <> '';
+    end
+    else
+      Accepted := False;
+  finally
+    Dlg.Free;
+  end;
+end;
+
+procedure TMainForm.UserTreeDblClick(Sender: TObject);
+var
+  Item: TListItem;
+  NameStr, ValueStr: string;
+  Accepted: Boolean;
+begin
+  if UserTree.Selected = nil then
+    Exit;
+  Item := UserTree.Selected;
+  NameStr := Item.Caption;
+  ValueStr := Item.SubItems[0];
+
+  EditVariable(NameStr, ValueStr, NameStr, ValueStr, Accepted);
+  if not Accepted then
+    Exit;
+
+  FUndoManager.PushState(FUserVars);
+  FUserVars.Values[Item.Caption] := ValueStr;
+  if NameStr <> Item.Caption then
+  begin
+    FUserVars.Delete(FUserVars.IndexOfName(Item.Caption));
+    FUserVars.Add(NameStr + '=' + ValueStr);
+  end;
+  FProvider.SaveUserVariables(FUserVars);
+  LoadVariables;
+end;
+
+procedure TMainForm.BtnAddClick(Sender: TObject);
+var
+  NameStr, ValueStr: string;
+  Accepted: Boolean;
+begin
+  EditVariable('', '', NameStr, ValueStr, Accepted);
+  if not Accepted then
+    Exit;
+
+  FUndoManager.PushState(FUserVars);
+  FUserVars.Values[NameStr] := ValueStr;
+  FProvider.SaveUserVariables(FUserVars);
+  LoadVariables;
+end;
+
+procedure TMainForm.BtnDeleteClick(Sender: TObject);
+var
+  Item: TListItem;
+  Idx: Integer;
+begin
+  if UserTree.Selected = nil then
+    Exit;
+  Item := UserTree.Selected;
+  Idx := FUserVars.IndexOfName(Item.Caption);
+  if Idx < 0 then
+    Exit;
+
+  FUndoManager.PushState(FUserVars);
+  FUserVars.Delete(Idx);
+  FProvider.SaveUserVariables(FUserVars);
+  LoadVariables;
 end;
 
 end.

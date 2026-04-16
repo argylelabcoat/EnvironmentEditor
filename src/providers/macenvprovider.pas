@@ -8,7 +8,7 @@ unit macenvprovider;
 interface
 
 uses
-  Classes, SysUtils, envproviderintf;
+  Classes, SysUtils, process, envproviderintf;
 
 type
   TMacEnvProvider = class(TInterfacedObject, IEnvProvider)
@@ -17,6 +17,7 @@ type
     FSystemPathsFile: string;
     FSystemPathsDir: string;
     FSearchPaths: TStringList;
+    FUseShellEvaluation: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -33,6 +34,7 @@ type
     property SystemPathsFile: string read FSystemPathsFile write FSystemPathsFile;
     property SystemPathsDir: string read FSystemPathsDir write FSystemPathsDir;
     property SearchPaths: TStringList read FSearchPaths;
+    property UseShellEvaluation: Boolean read FUseShellEvaluation write FUseShellEvaluation;
   end;
 
 implementation
@@ -56,6 +58,7 @@ begin
 
   FSystemPathsFile := '/etc/paths';
   FSystemPathsDir := '/etc/paths.d/';
+  FUseShellEvaluation := True;
 end;
 
 destructor TMacEnvProvider.Destroy;
@@ -66,28 +69,65 @@ end;
 
 function TMacEnvProvider.LoadUserVariables: TStringList;
 var
-  Lines: TStringList;
+  Proc: TProcess;
+  Output: TStringList;
   I, J: Integer;
+  Line: string;
+  PosEq: Integer;
+  ShellPath: string;
   Key, Value: string;
 begin
   Result := TStringList.Create;
-  Lines := TStringList.Create;
+  ShellPath := GetEnvironmentVariable('SHELL');
+  if ShellPath = '' then
+    ShellPath := '/bin/zsh';
+
+  Proc := TProcess.Create(nil);
+  Output := TStringList.Create;
   try
-    for J := 0 to FSearchPaths.Count - 1 do
+    Proc.Executable := ShellPath;
+    Proc.Parameters.Add('-l');
+    Proc.Parameters.Add('-c');
+    Proc.Parameters.Add('env');
+    Proc.Options := [poWaitOnExit, poUsePipes];
+    try
+      Proc.Execute;
+      Output.LoadFromStream(Proc.Output);
+    except
+      Output.Clear;
+    end;
+
+    if FUseShellEvaluation and (Output.Count > 0) then
     begin
-      if FileExists(FSearchPaths[J]) then
+      for I := 0 to Output.Count - 1 do
       begin
-        Lines.Clear;
-        Lines.LoadFromFile(FSearchPaths[J]);
-        for I := 0 to Lines.Count - 1 do
+        Line := Output[I];
+        PosEq := Pos('=', Line);
+        if PosEq > 0 then
+          Result.Add(Line);
+      end;
+    end
+    else
+    begin
+      // Parse profile files directly
+      Output.Clear;
+      for I := 0 to FSearchPaths.Count - 1 do
+      begin
+        if FileExists(FSearchPaths[I]) then
         begin
-          if ParseExportLine(Lines[I], Key, Value) then
-            Result.Values[Key] := Value;
+          Output.LoadFromFile(FSearchPaths[I]);
+          for J := 0 to Output.Count - 1 do
+          begin
+            if ParseExportLine(Output[J], Key, Value) then
+              Result.Values[Key] := Value;
+          end;
+          Output.Clear;
         end;
       end;
     end;
   finally
-    Lines.Free;
+    Output.Free;
+    Proc.Free;
   end;
 end;
 
@@ -97,9 +137,12 @@ var
   PathValue: string;
   I: Integer;
   SearchRec: TSearchRec;
+  DirEntries: TStringList;
+  EntryName: string;
 begin
   Result := TStringList.Create;
   Lines := TStringList.Create;
+  DirEntries := TStringList.Create;
   try
     if FileExists(FSystemPathsFile) then
       Lines.LoadFromFile(FSystemPathsFile);
@@ -118,27 +161,32 @@ begin
     begin
       repeat
         if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
-        begin
-          Lines.Clear;
-          Lines.LoadFromFile(FSystemPathsDir + SearchRec.Name);
-          for I := 0 to Lines.Count - 1 do
-          begin
-            if Trim(Lines[I]) <> '' then
-            begin
-              if PathValue <> '' then
-                PathValue := PathValue + ':';
-              PathValue := PathValue + Trim(Lines[I]);
-            end;
-          end;
-        end;
+          DirEntries.Add(SearchRec.Name);
       until FindNext(SearchRec) <> 0;
       FindClose(SearchRec);
+    end;
+
+    DirEntries.Sort;
+    for EntryName in DirEntries do
+    begin
+      Lines.Clear;
+      Lines.LoadFromFile(FSystemPathsDir + EntryName);
+      for I := 0 to Lines.Count - 1 do
+      begin
+        if Trim(Lines[I]) <> '' then
+        begin
+          if PathValue <> '' then
+            PathValue := PathValue + ':';
+          PathValue := PathValue + Trim(Lines[I]);
+        end;
+      end;
     end;
 
     if PathValue <> '' then
       Result.Add('PATH=' + PathValue);
   finally
     Lines.Free;
+    DirEntries.Free;
   end;
 end;
 
