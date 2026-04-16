@@ -32,7 +32,7 @@ type
   end;
 
 var
-  MainForm: TMainForm;
+  frmMain: TMainForm;
 
 implementation
 

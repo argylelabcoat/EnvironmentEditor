@@ -1,4 +1,4 @@
-unit testvalidator;
+unit testpathutils;
 
 {$mode objfpc}{$H+}
 {$J-}
@@ -8,83 +8,107 @@ unit testvalidator;
 interface
 
 uses
-Classes, SysUtils, fpcunit, testregistry, validator;
+  Classes, SysUtils, fpcunit, testregistry, pathutils;
 
 type
-TTestValidator = class(TTestCase)
-published
-procedure TestValidate_NotFound;
-procedure TestValidate_Valid;
-procedure TestValidate_Duplicate;
-procedure TestValidate_Overridden;
-end;
+  TTestPathUtils = class(TTestCase)
+  published
+    procedure TestSplitPath_Windows;
+    procedure TestSplitPath_Unix;
+    procedure TestJoinPath_Windows;
+    procedure TestJoinPath_Unix;
+    procedure TestFindDuplicates;
+    procedure TestNormalizePath;
+  end;
 
 implementation
 
-procedure TTestValidator.TestValidate_NotFound;
+procedure TTestPathUtils.TestSplitPath_Windows;
 var
-Status: TPathStatus;
-Validator: TPathValidator;
+  Actual: TStringList;
 begin
-Validator := TPathValidator.Create;
-try
-Status := Validator.Validate('/definitely/not/a/real/path/on/any/system');
-AssertEquals(Ord(psNotFound), Ord(Status));
-finally
-Validator.Free;
-end;
+  Actual := TPathUtils.SplitPath('C:\Windows;C:\Users', ';');
+  try
+    AssertEquals(2, Actual.Count);
+    AssertEquals('C:\Windows', Actual[0]);
+    AssertEquals('C:\Users', Actual[1]);
+  finally
+    Actual.Free;
+  end;
 end;
 
-procedure TTestValidator.TestValidate_Valid;
+procedure TTestPathUtils.TestSplitPath_Unix;
 var
-Status: TPathStatus;
-Validator: TPathValidator;
-TempDir: string;
+  Actual: TStringList;
 begin
-TempDir := GetTempDir;
-Validator := TPathValidator.Create;
-try
-Status := Validator.Validate(TempDir);
-AssertEquals(Ord(psValid), Ord(Status));
-finally
-Validator.Free;
-end;
+  Actual := TPathUtils.SplitPath('/usr/bin:/usr/local/bin', ':');
+  try
+    AssertEquals(2, Actual.Count);
+    AssertEquals('/usr/bin', Actual[0]);
+    AssertEquals('/usr/local/bin', Actual[1]);
+  finally
+    Actual.Free;
+  end;
 end;
 
-procedure TTestValidator.TestValidate_Duplicate;
+procedure TTestPathUtils.TestJoinPath_Windows;
 var
-Validator: TPathValidator;
-Paths: TStringList;
-Results: TStringList;
-TempDir: string;
+  List: TStringList;
 begin
-TempDir := GetTempDir;
-Paths := TStringList.Create;
-try
-Paths.Add(TempDir);
-Paths.Add(TempDir);
-Validator := TPathValidator.Create;
-try
-Results := Validator.ValidateList(Paths);
-try
-AssertEquals(Ord(psDuplicate), Ord(StrToInt(Results.Values[TempDir])));
-finally
-Results.Free;
-end;
-finally
-Validator.Free;
-end;
-finally
-Paths.Free;
-end;
+  List := TStringList.Create;
+  try
+    List.Add('C:\Windows');
+    List.Add('C:\Users');
+    AssertEquals('C:\Windows;C:\Users', TPathUtils.JoinPath(List, ';'));
+  finally
+    List.Free;
+  end;
 end;
 
-procedure TTestValidator.TestValidate_Overridden;
+procedure TTestPathUtils.TestJoinPath_Unix;
+var
+  List: TStringList;
 begin
-  { Overridden detection requires system+user comparison; tested in integration }
-AssertTrue(True);
+  List := TStringList.Create;
+  try
+    List.Add('/usr/bin');
+    List.Add('/usr/local/bin');
+    AssertEquals('/usr/bin:/usr/local/bin', TPathUtils.JoinPath(List, ':'));
+  finally
+    List.Free;
+  end;
+end;
+
+procedure TTestPathUtils.TestFindDuplicates;
+var
+  Paths: TStringList;
+  Dups: TStringList;
+begin
+  Paths := TStringList.Create;
+  try
+    Paths.Add('C:\Windows');
+    Paths.Add('C:\Users');
+    Paths.Add('C:\Windows');
+    Dups := TPathUtils.FindDuplicates(Paths);
+    try
+      AssertEquals(1, Dups.Count);
+      AssertEquals('C:\Windows', Dups[0]);
+    finally
+      Dups.Free;
+    end;
+  finally
+    Paths.Free;
+  end;
+end;
+
+procedure TTestPathUtils.TestNormalizePath;
+begin
+  AssertEquals('C:\Windows\System32',
+    TPathUtils.NormalizePath('C:\Windows\System32\'));
+  AssertEquals('/usr/local/bin',
+    TPathUtils.NormalizePath('/usr/local/bin/'));
 end;
 
 initialization
-RegisterTest(TTestValidator);
+  RegisterTest(TTestPathUtils);
 end.

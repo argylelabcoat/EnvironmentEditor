@@ -1,4 +1,4 @@
-unit undomanager;
+unit testundomanager;
 
 {$mode objfpc}{$H+}
 {$J-}
@@ -8,88 +8,75 @@ unit undomanager;
 interface
 
 uses
-Classes, SysUtils, Contnrs;
+  Classes, SysUtils, fpcunit, testregistry, undomanager;
 
 type
-TUndoManager = class
-private
-FStack: TObjectList;
-FIndex: Integer;
-public
-constructor Create;
-destructor Destroy; override;
-procedure Push(AState: TStringList);
-function Undo: TStringList;
-function Redo: TStringList;
-function CanUndo: Boolean;
-function CanRedo: Boolean;
-end;
+  TTestUndoManager = class(TTestCase)
+  published
+    procedure TestPushAndPop;
+    procedure TestCanUndoRedo;
+  end;
 
 implementation
 
-constructor TUndoManager.Create;
-begin
-inherited Create;
-FStack := TObjectList.Create(True);
-FIndex := -1;
-end;
-
-destructor TUndoManager.Destroy;
-begin
-FStack.Free;
-inherited Destroy;
-end;
-
-procedure TUndoManager.Push(AState: TStringList);
+procedure TTestUndoManager.TestPushAndPop;
 var
-CopyState: TStringList;
-I: Integer;
+  Manager: TUndoManager;
+  State1, State2: TStringList;
+  Popped: TStringList;
 begin
-while FStack.Count - 1 > FIndex do
-FStack.Delete(FStack.Count - 1);
-CopyState := TStringList.Create;
-for I := 0 to AState.Count - 1 do
-CopyState.Add(AState[I]);
-FStack.Add(CopyState);
-FIndex := FStack.Count - 1;
+  Manager := TUndoManager.Create;
+  try
+    State1 := TStringList.Create;
+    try
+      State1.Add('PATH=/usr/bin');
+      Manager.Push(State1);
+    finally
+      State1.Free;
+    end;
+
+    State2 := TStringList.Create;
+    try
+      State2.Add('PATH=/usr/local/bin');
+      Manager.Push(State2);
+    finally
+      State2.Free;
+    end;
+
+    Popped := Manager.Undo;
+    try
+      AssertEquals('PATH=/usr/local/bin', Popped[0]);
+    finally
+      Popped.Free;
+    end;
+  finally
+    Manager.Free;
+  end;
 end;
 
-function TUndoManager.Undo: TStringList;
+procedure TTestUndoManager.TestCanUndoRedo;
+var
+  Manager: TUndoManager;
+  State: TStringList;
 begin
-if FIndex >= 0 then
-begin
-Result := TStringList.Create;
-Result.Assign(TStringList(FStack[FIndex]));
-Dec(FIndex);
-end
-else
-begin
-Result := TStringList.Create;
-end;
-end;
-
-function TUndoManager.Redo: TStringList;
-begin
-if FIndex < FStack.Count - 1 then
-begin
-Inc(FIndex);
-Result := TStringList.Create;
-Result.Assign(TStringList(FStack[FIndex]));
-end
-else
-begin
-Result := TStringList.Create;
-end;
+  Manager := TUndoManager.Create;
+  try
+    AssertFalse(Manager.CanUndo);
+    State := TStringList.Create;
+    try
+      State.Add('X=1');
+      Manager.Push(State);
+    finally
+      State.Free;
+    end;
+    AssertTrue(Manager.CanUndo);
+    Manager.Undo.Free;
+    AssertTrue(Manager.CanRedo);
+  finally
+    Manager.Free;
+  end;
 end;
 
-function TUndoManager.CanUndo: Boolean;
-begin
-Result := FIndex >= 0;
-end;
-
-function TUndoManager.CanRedo: Boolean;
-begin
-Result := FIndex < FStack.Count - 1;
-end;
-
+initialization
+  RegisterTest(TTestUndoManager);
 end.

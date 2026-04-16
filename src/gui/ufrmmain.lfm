@@ -55,17 +55,17 @@ object MainForm: TMainForm
     Left = 0
     Height = 727
     Top = 0
-    Width = 508
+    Width = 513
     Align = alLeft
     Columns = <>
     TabOrder = 1
     ViewStyle = vsReport
   end
   object SystemTree: TListView
-    Left = 513
+    Left = 503
     Height = 727
     Top = 0
-    Width = 511
+    Width = 521
     Align = alClient
     Columns = <>
     TabOrder = 2
