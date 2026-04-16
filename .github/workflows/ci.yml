@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Lazarus
+        uses: gpascal/setup-lazarus@v2
+        with:
+          lazarus-version: stable
+
+      - name: Build test runner
+        run: lazbuild -B Tests.lpi
+        shell: bash
+
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            ./tests/bin/testrunner.exe
+          else
+            ./tests/bin/testrunner
+          fi
+        shell: bash
+
+      - name: Build GUI application
+        run: lazbuild -B OpenEnvEd.lpi
+        shell: bash
+
+      - name: Build CLI application
+        run: lazbuild -B OpenEnvEdCLI.lpi
+        shell: bash
+
+      - name: Upload GUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openenved-${{ matrix.os }}
+          path: |
+            bin/openenved*
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openenved-cli-${{ matrix.os }}
+          path: |
+            bin/openenved-cli*
