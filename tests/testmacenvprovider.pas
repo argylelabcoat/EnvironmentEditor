@@ -265,6 +265,7 @@ begin
 
   Provider := TMacEnvProvider.Create;
   try
+    Provider.UseShellEvaluation := False;
     Provider.SearchPaths.Clear;
     Provider.SearchPaths.Add(TempFile);
     Origins := Provider.LoadUserVariableOrigins;

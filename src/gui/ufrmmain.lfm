@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 202
+  Left = 735
   Height = 768
-  Top = 738
+  Top = 89
   Width = 1024
   Caption = 'OpenEnvEd'
   ClientHeight = 768

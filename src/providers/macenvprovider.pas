@@ -196,6 +196,11 @@ var
   I, J: Integer;
   Key, Value: string;
   Origin: string;
+  Proc: TProcess;
+  Output: TStringList;
+  Line: string;
+  PosEq: Integer;
+  ShellPath: string;
 begin
   Result := TStringList.Create;
   Lines := TStringList.Create;
@@ -212,6 +217,42 @@ begin
           if ParseExportLine(Lines[I], Key, Value) then
             Result.Values[Key] := Origin;
         end;
+      end;
+    end;
+
+    if FUseShellEvaluation then
+    begin
+      ShellPath := GetEnvironmentVariable('SHELL');
+      if ShellPath = '' then
+        ShellPath := '/bin/zsh';
+      Proc := TProcess.Create(nil);
+      Output := TStringList.Create;
+      try
+        Proc.Executable := ShellPath;
+        Proc.Parameters.Add('-l');
+        Proc.Parameters.Add('-c');
+        Proc.Parameters.Add('env');
+        Proc.Options := [poWaitOnExit, poUsePipes];
+        try
+          Proc.Execute;
+          Output.LoadFromStream(Proc.Output);
+        except
+          Output.Clear;
+        end;
+        for I := 0 to Output.Count - 1 do
+        begin
+          Line := Output[I];
+          PosEq := Pos('=', Line);
+          if PosEq > 0 then
+          begin
+            Key := Copy(Line, 1, PosEq - 1);
+            if Result.Values[Key] = '' then
+              Result.Values[Key] := 'Inherited';
+          end;
+        end;
+      finally
+        Output.Free;
+        Proc.Free;
       end;
     end;
   finally

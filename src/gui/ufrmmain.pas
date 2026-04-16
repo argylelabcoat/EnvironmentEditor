@@ -12,35 +12,35 @@ uses
   StdCtrls, envproviderintf, undomanager, backupmanager, pathutils, validator,
   macenvprovider;
 
-  type
-    TMainForm = class(TForm)
-      BottomPanel: TPanel;
-      BtnUndo: TButton;
-      BtnRedo: TButton;
-      BtnBackup: TButton;
-      BtnAdd: TButton;
-      BtnDelete: TButton;
-      Splitter1: TSplitter;
-      StatusBar: TStatusBar;
-      UserTree: TListView;
-      SystemTree: TListView;
-      procedure FormCreate(Sender: TObject);
-      procedure FormDestroy(Sender: TObject);
-      procedure BtnUndoClick(Sender: TObject);
-      procedure BtnRedoClick(Sender: TObject);
-      procedure BtnBackupClick(Sender: TObject);
-      procedure BtnAddClick(Sender: TObject);
-      procedure BtnDeleteClick(Sender: TObject);
-      procedure UserTreeDblClick(Sender: TObject);
-    private
-      FUserVars: TStringList;
-      FSystemVars: TStringList;
-      FUserOrigins: TStringList;
-      FSystemOrigins: TStringList;
-      FProvider: IEnvProvider;
-      FUndoManager: TUndoManager;
-      FBackupManager: TBackupManager;
-      procedure InitTrees;
+type
+  TMainForm = class(TForm)
+    BottomPanel: TPanel;
+    BtnUndo: TButton;
+    BtnRedo: TButton;
+    BtnBackup: TButton;
+    BtnAdd: TButton;
+    BtnDelete: TButton;
+    Splitter1: TSplitter;
+    StatusBar: TStatusBar;
+    UserTree: TListView;
+    SystemTree: TListView;
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure BtnUndoClick(Sender: TObject);
+    procedure BtnRedoClick(Sender: TObject);
+    procedure BtnBackupClick(Sender: TObject);
+    procedure BtnAddClick(Sender: TObject);
+    procedure BtnDeleteClick(Sender: TObject);
+    procedure UserTreeDblClick(Sender: TObject);
+  private
+    FUserVars: TStringList;
+    FSystemVars: TStringList;
+    FUserOrigins: TStringList;
+    FSystemOrigins: TStringList;
+    FProvider: IEnvProvider;
+    FUndoManager: TUndoManager;
+    FBackupManager: TBackupManager;
+    procedure InitTrees;
     procedure LoadVariables;
     procedure PopulateTree(ATree: TListView; AVars: TStringList; AOrigins: TStringList);
     procedure RefreshDiagnostics;
@@ -285,6 +285,7 @@ var
   EdName, EdValue: TEdit;
   LblName, LblValue: TLabel;
   BtnOK, BtnCancel: TButton;
+  NameResult, ValueResult: string;
 begin
   Dlg := TForm.CreateNew(nil);
   try
@@ -337,9 +338,11 @@ begin
 
     if Dlg.ShowModal = mrOK then
     begin
-      NewName := Trim(EdName.Text);
-      NewValue := EdValue.Text;
-      Accepted := NewName <> '';
+      NameResult := Trim(EdName.Text);
+      ValueResult := EdValue.Text;
+      NewName := NameResult;
+      NewValue := ValueResult;
+      Accepted := NameResult <> '';
     end
     else
       Accepted := False;
@@ -351,41 +354,41 @@ end;
 procedure TMainForm.UserTreeDblClick(Sender: TObject);
 var
   Item: TListItem;
-  NameStr, ValueStr: string;
+  OrigName, OrigValue: string;
+  NewName, NewValue: string;
   Accepted: Boolean;
+  Idx: Integer;
 begin
   if UserTree.Selected = nil then
     Exit;
   Item := UserTree.Selected;
-  NameStr := Item.Caption;
-  ValueStr := Item.SubItems[0];
+  OrigName := Item.Caption;
+  OrigValue := Item.SubItems[0];
 
-  EditVariable(NameStr, ValueStr, NameStr, ValueStr, Accepted);
+  EditVariable(OrigName, OrigValue, NewName, NewValue, Accepted);
   if not Accepted then
     Exit;
 
   FUndoManager.PushState(FUserVars);
-  FUserVars.Values[Item.Caption] := ValueStr;
-  if NameStr <> Item.Caption then
-  begin
-    FUserVars.Delete(FUserVars.IndexOfName(Item.Caption));
-    FUserVars.Add(NameStr + '=' + ValueStr);
-  end;
+  Idx := FUserVars.IndexOfName(OrigName);
+  if Idx >= 0 then
+    FUserVars.Delete(Idx);
+  FUserVars.Add(NewName + '=' + NewValue);
   FProvider.SaveUserVariables(FUserVars);
   LoadVariables;
 end;
 
 procedure TMainForm.BtnAddClick(Sender: TObject);
 var
-  NameStr, ValueStr: string;
+  NewName, NewValue: string;
   Accepted: Boolean;
 begin
-  EditVariable('', '', NameStr, ValueStr, Accepted);
+  EditVariable('', '', NewName, NewValue, Accepted);
   if not Accepted then
     Exit;
 
   FUndoManager.PushState(FUserVars);
-  FUserVars.Values[NameStr] := ValueStr;
+  FUserVars.Values[NewName] := NewValue;
   FProvider.SaveUserVariables(FUserVars);
   LoadVariables;
 end;
