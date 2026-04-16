@@ -6,7 +6,7 @@ program Tests;
 {$WARN 4031 on}
 
 uses
-  Classes, SysUtils, consoletestrunner, testregistry, testpathutils, testvalidator;
+  Classes, SysUtils, consoletestrunner, testregistry, testpathutils, testvalidator, testwinenvprovider, testunixenvprovider, testmacenvprovider;
 
 var
   App: TTestRunner;
