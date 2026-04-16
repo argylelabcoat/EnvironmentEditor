@@ -369,7 +369,7 @@ begin
   if not Accepted then
     Exit;
 
-  FUndoManager.PushState(FUserVars);
+  FUndoManager.Push(FUserVars);
   Idx := FUserVars.IndexOfName(OrigName);
   if Idx >= 0 then
     FUserVars.Delete(Idx);
@@ -387,7 +387,7 @@ begin
   if not Accepted then
     Exit;
 
-  FUndoManager.PushState(FUserVars);
+  FUndoManager.Push(FUserVars);
   FUserVars.Values[NewName] := NewValue;
   FProvider.SaveUserVariables(FUserVars);
   LoadVariables;
@@ -405,7 +405,7 @@ begin
   if Idx < 0 then
     Exit;
 
-  FUndoManager.PushState(FUserVars);
+  FUndoManager.Push(FUserVars);
   FUserVars.Delete(Idx);
   FProvider.SaveUserVariables(FUserVars);
   LoadVariables;
