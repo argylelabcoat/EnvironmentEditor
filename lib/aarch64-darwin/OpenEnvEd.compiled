@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="/Users/matthew/fpcupdeluxe/fpc/bin/aarch64-darwin/fpc.sh" Date="1776315133"/>
-  <Params Value="-MObjFPC -Scgi -O1 -gw3 -gl -gh -k-weak_framework -kAppKit -k-weak_framework -kUserNotifications -l -vewnhibq -Fi/Users/matthew/proj/CrossEE/lib/aarch64-darwin -Fu/Users/matthew/proj/CrossEE/ -Fu/Users/matthew/proj/CrossEE/src/providers -Fu/Users/matthew/proj/CrossEE/src/utils -Fu/Users/matthew/proj/CrossEE/src/core -Fu/Users/matthew/proj/CrossEE/src/gui -Fu/Users/matthew/fpcupdeluxe/lazarus/lcl/units/aarch64-darwin/cocoa -Fu/Users/matthew/fpcupdeluxe/lazarus/lcl/units/aarch64-darwin -Fu/Users/matthew/fpcupdeluxe/lazarus/components/freetype/lib/aarch64-darwin -Fu/Users/matthew/fpcupdeluxe/lazarus/components/lazutils/lib/aarch64-darwin -Fu/Users/matthew/fpcupdeluxe/lazarus/packager/units/aarch64-darwin -FU/Users/matthew/proj/CrossEE/lib/aarch64-darwin/ -FE/Users/matthew/proj/CrossEE/bin/ -o/Users/matthew/proj/CrossEE/bin/openenved -dLCL -dLCLcocoa -gh OpenEnvEd.lpr"/>
-</CONFIG>

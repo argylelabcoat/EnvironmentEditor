@@ -1,0 +1,27 @@
+# Lazarus/FPC build artifacts
+*.o
+*.ppu
+*.or
+*.res
+*.compiled
+*.lps
+
+# Executables
+*.exe
+*.app
+bin/
+
+# Lazarus lib directories
+lib/
+cli/lib/
+tests/lib/
+
+# Lazarus backup directories
+backup/
+src/gui/backup/
+
+# macOS
+.DS_Store
+
+# Debug symbols
+*.dSYM/
