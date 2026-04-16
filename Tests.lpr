@@ -1,12 +1,22 @@
-; JEDI Code Format configuration for OpenEnvEd
-; 2 spaces, no tabs, lowercase keywords
-Indentation=Spaces
-IndentationCount=2
-BeginEndStyle=AlwaysBreakLine
-MaxLineLength=100
-KeywordCase=LowerCase
-TypePrefix=T
-InterfacePrefix=I
-ExceptionPrefix=E
-ClassFieldPrefix=F
-VariableCase=CamelCase
+program Tests;
+
+{$mode objfpc}{$H+}
+{$J-}
+{$WARN 5024 on}
+{$WARN 4031 on}
+
+uses
+  Classes, SysUtils, consoletestrunner, testregistry, testpathutils;
+
+var
+  App: TTestRunner;
+
+begin
+  App := TTestRunner.Create(nil);
+  try
+    App.Initialize;
+    App.Run;
+  finally
+    App.Free;
+  end;
+end.
