@@ -2,11 +2,7 @@
 <CONFIG>
   <ProjectOptions>
     <Version Value="12"/>
-    <PathDelim Value="/"/>
     <General>
-      <Flags>
-        <MainUnitIsPascalSource Value="True"/>
-      </Flags>
       <SessionStorage Value="InProjectDir"/>
       <Title Value="OpenEnvEd"/>
       <UseAppBundle Value="False"/>
@@ -45,7 +41,6 @@
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
-    <PathDelim Value="/"/>
     <Target>
       <Filename Value="bin/openenved"/>
     </Target>
@@ -56,7 +51,6 @@
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
-        <SyntaxMode Value="ObjFPC"/>
         <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>

@@ -1,18 +1,18 @@
 object MainForm: TMainForm
-  Left = 0
+  Left = 202
   Height = 768
-  Top = 0
+  Top = 738
   Width = 1024
   Caption = 'OpenEnvEd'
   ClientHeight = 768
   ClientWidth = 1024
+  LCLVersion = '4.6.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  LCLVersion = '3.0.0.1'
   object BottomPanel: TPanel
     Left = 0
     Height = 41
-    Top = 727
+    Top = 709
     Width = 1024
     Align = alBottom
     BevelOuter = bvNone
@@ -45,15 +45,14 @@ object MainForm: TMainForm
     end
   end
   object Splitter1: TSplitter
-    Cursor = crHSplit
-    Left = 508
-    Height = 727
+    Left = 513
+    Height = 709
     Top = 0
     Width = 5
   end
   object UserTree: TListView
     Left = 0
-    Height = 727
+    Height = 709
     Top = 0
     Width = 513
     Align = alLeft
@@ -62,10 +61,10 @@ object MainForm: TMainForm
     ViewStyle = vsReport
   end
   object SystemTree: TListView
-    Left = 503
-    Height = 727
+    Left = 518
+    Height = 709
     Top = 0
-    Width = 521
+    Width = 506
     Align = alClient
     Columns = <>
     TabOrder = 2
@@ -73,8 +72,8 @@ object MainForm: TMainForm
   end
   object StatusBar: TStatusBar
     Left = 0
-    Height = 23
-    Top = 745
+    Height = 18
+    Top = 750
     Width = 1024
     Panels = <>
     SimplePanel = False
