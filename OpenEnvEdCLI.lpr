@@ -1,47 +1,35 @@
-unit openenvcli;
+program openenvcli;
 
 {$mode objfpc}{$H+}
 {$J-}
 {$WARN 5024 on}
 {$WARN 4031 on}
 
-interface
-
 uses
-Classes, SysUtils;
+  Classes, SysUtils, envproviderintf, unixenvprovider, macenvprovider;
 
-procedure RunCLI;
-
-implementation
-
-uses
-envproviderintf, unixenvprovider, macenvprovider;
-
-procedure RunCLI;
 var
-Provider: IEnvProvider;
-UserVars: TStringList;
+  Provider: IEnvProvider;
+  UserVars: TStringList;
 begin
   {$IFDEF MSWINDOWS}
-Provider := TWinEnvProvider.Create;
+  Provider := TWinEnvProvider.Create;
   {$ENDIF}
   {$IF DEFINED(DARWIN)}
-Provider := TMacEnvProvider.Create;
+  Provider := TMacEnvProvider.Create;
   {$ENDIF}
   {$IF DEFINED(UNIX) AND NOT DEFINED(DARWIN)}
-Provider := TUnixEnvProvider.Create;
+  Provider := TUnixEnvProvider.Create;
   {$ENDIF}
 
-UserVars := Provider.LoadUserVariables;
-try
-Writeln('User environment variables:');
-if UserVars.Count = 0 then
-Writeln('  (none)')
-else
-Writeln(UserVars.Text);
-finally
-UserVars.Free;
-end;
-end;
-
+  UserVars := Provider.LoadUserVariables;
+  try
+    Writeln('User environment variables:');
+    if UserVars.Count = 0 then
+      Writeln('  (none)')
+    else
+      Writeln(UserVars.Text);
+  finally
+    UserVars.Free;
+  end;
 end.
